@@ -1,4 +1,5 @@
-﻿Attribute VB_Name = "PowerPointCalendar"
+Option Explicit
+
 ' グローバル変数としてDictionaryを保持
 Public GlobalSettings As Object
 
@@ -85,6 +86,7 @@ End Sub
 Sub LoadSettingsIntoDictionary()
 
     ' 変数の定義
+    Dim cell As Object
     Dim dict As Object
     Dim ws As Worksheet
     Dim lastRow As Long
@@ -136,6 +138,7 @@ Sub LoadSettingsIntoDictionary()
     
     ' 変数開放
     Set dict = Nothing
+    Set cell = Nothing
     
 End Sub
 '''
@@ -182,7 +185,7 @@ Sub AddCalendar(pptSlide)
     ' 変数の定義
     Dim marginLeft, marginTop As Single
     Dim posLeft, posTop As Single
-    Dim boxWidth, weekBoxHeight, dayBoxHeight As Single
+    Dim boxWidth, weekBoxHeight, dayBoxHeight, interval As Single
     Dim i As Integer
     Dim dayOfWeek As Integer
     
@@ -261,7 +264,7 @@ Sub AddWeekHeader(pptSlide, posLeft, posTop, sizeWidth, sizeHeight, textWeek, rg
     ' 変数の定義
     Dim pptShape As Object
 
-     ' 角丸図形を作成
+    ' 角丸図形を作成
     Set pptShape = pptSlide.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
                                             Left:=posLeft, Top:=posTop, Width:=sizeWidth, Height:=sizeHeight)
                                     
@@ -280,7 +283,7 @@ Sub AddWeekHeader(pptSlide, posLeft, posTop, sizeWidth, sizeHeight, textWeek, rg
         .MarginRight = 0
         .marginTop = 0
         .WordWrap = False
-        .VerticalAnchor = msoAnchorTop
+        .VerticalAnchor = msoAnchorMiddle
         .TextRange.ParagraphFormat.Alignment = 2 ' ppAlignCenter = 2
     End With
     
@@ -313,7 +316,13 @@ Sub AddDayBox(pptSlide, posLeft, posTop, sizeWidth, sizeHeight, i)
     Dim pptShape As Object
     Dim daySchedule As daySchedule
     Dim textDay As String
-    Dim myShape As Variant
+    Dim colorDay As Variant
+    
+    Dim dayTextMarginLeft As Single
+    Dim textRangeMemo, textRangeItems As Object
+    
+    ' テキストの左余白を取得
+    dayTextMarginLeft = GlobalSettings("DayTextMarginLeft")
 
     ' 一桁のときは空白を追加
     daySchedule = DaySchedules(i)
@@ -347,7 +356,7 @@ Sub AddDayBox(pptSlide, posLeft, posTop, sizeWidth, sizeHeight, i)
     With pptShape.TextFrame
         .TextRange.Text = textDay
         .MarginBottom = 0
-        .marginLeft = 0
+        .marginLeft = dayTextMarginLeft
         .MarginRight = 0
         .marginTop = 0
         .WordWrap = False
@@ -356,21 +365,23 @@ Sub AddDayBox(pptSlide, posLeft, posTop, sizeWidth, sizeHeight, i)
     End With
     
     ' フォントを「BIZ UDPゴシック」にして色を設定
-    With pptShape.TextFrame.TextRange.Font
+    With pptShape.TextFrame2.TextRange.Font
         .Size = 12
         .Name = "BIZ UDPGothic"
         .Bold = True
-        .Color.RGB = colorDay
+        '.Color.RGB = colorDay          'TextFrame,TextRange.Font用
+        .Fill.ForeColor.RGB = colorDay  'TextFrame2,TextRange.Font用
     End With
     
     ' 日付の横にその日のメモを追加して、フォントを「BIZ UDPゴシック」に指定
-    Set textRangeMemo = pptShape.TextFrame.TextRange.InsertAfter(" " & daySchedule.Memo & vbCrLf)
+    Set textRangeMemo = pptShape.TextFrame2.TextRange.InsertAfter(" " & daySchedule.Memo & vbCrLf)
     With textRangeMemo.Font
         .Size = 9
         .Name = "BIZ UDPGothic"
         .NameFarEast = "BIZ UDPGothic"
         .Bold = True
-        .Color.RGB = rgbBlack
+        '.Color.RGB = rgbBlack           'TextFrame,TextRange.Font用
+         .Fill.ForeColor.RGB = rgbBlack  'TextFrame2,TextRange.Font用
     End With
     
     ' その日の項目を追加して、フォント「UD デジタル 教科書体 NK-R」と色を設定
@@ -381,10 +392,14 @@ Sub AddDayBox(pptSlide, posLeft, posTop, sizeWidth, sizeHeight, i)
         .Name = "UD Digi Kyokasho NK-R"
         .NameFarEast = "UD デジタル 教科書体 NK-R"
         .Bold = False
-        .Color.RGB = rgbBlack
+        '.Color.RGB = rgbBlack           'TextFrame,TextRange.Font用
+         .Fill.ForeColor.RGB = rgbBlack  'TextFrame2,TextRange.Font用
+         .Spacing = -1 ' 負の値で間隔を狭くする .SpacingはTextFrame2.TextRange.Fontでのみサポート
     End With
     
     ' 変数開放
+    Set textRangeMemo = Nothing
+    Set textRangeItems = Nothing
     Set pptShape = Nothing
     
 End Sub
